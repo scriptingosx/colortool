@@ -48,26 +48,19 @@ func lightColor() -> NSColor {
 }
 
 
-// from https://stackoverflow.com/questions/8697205/convert-hex-color-code-to-nscolor
-func colorFromString(hexString : String) -> NSColor? {
+func colorFromHex(hexString : String) -> NSColor? {
   var result : NSColor? = nil
-  var colorCode : UInt32 = 0
-  var redByte, greenByte, blueByte : UInt8
-  
-  // these two lines are for web color strings that start with a #
-  // -- as in #ABCDEF; remove if you don't have # in the string
-  let index1 = hexString.index(hexString.endIndex, offsetBy: -6)
-  let substring1 = hexString[index1...]
-  
-  let scanner = Scanner(string: String(substring1))
-  let success = scanner.scanHexInt32(&colorCode)
-  
-  if success == true {
-    redByte = UInt8.init((colorCode >> 16) & 0xff)
-    greenByte = UInt8.init((colorCode >> 8) & 0xff)
-    blueByte = UInt8.init(colorCode & 0xff)
     
-    result = NSColor(calibratedRed: CGFloat(redByte) / 0xff, green: CGFloat(greenByte) / 0xff, blue: CGFloat(blueByte) / 0xff, alpha: 1.0)
+  if let colorCode = Int(hexString, radix: 16) {
+    let redByte = (colorCode >> 16) & 0xff
+    let greenByte = (colorCode >> 8) & 0xff
+    let blueByte = colorCode & 0xff
+    
+    let redValue = CGFloat(redByte) / 0xff
+    let greenValue = CGFloat(greenByte) / 0xff
+    let blueValue = CGFloat(blueByte) / 0xff
+
+    result = NSColor(calibratedRed: redValue, green: greenValue, blue: blueValue, alpha: 1.0)
   }
   return result
 }
@@ -104,6 +97,19 @@ func parseURL(path : String) -> URL {
   return url
 }
 
+func parseRGBValue(_ argument: String) -> CGFloat {
+  if let intValue = Int(argument) {
+    if intValue >= 0 && intValue <= 100 {
+      return (CGFloat(intValue) / 100)
+    } else {
+      print("value \(intValue) out of range 0...100")
+      exit(1)
+    }
+  } else {
+    print("\(argument) is not a valid value")
+    exit(1)
+  }
+}
 
 func main() {
   // first argument is always path to binary, ignore
@@ -122,15 +128,17 @@ func main() {
     color = randomColor()
   } else if arguments.count == 2 {
     // first argument should be either a hexcode (start with #) or one of our options
-    if arguments[1].starts(with: "#") {
-      if let hexColor = colorFromString(hexString: arguments[1]) {
+    let argument1 = arguments[1]
+    
+    if argument1.starts(with: "#") {
+      if let hexColor = colorFromHex(hexString: String(argument1.dropFirst())) {
         color = hexColor
       } else {
-        print("cannot parse \(arguments[1])")
+        print("cannot parse \(argument1)")
         exit(1)
       }
     } else {
-      if let option = ColorOption(rawValue: arguments[1]) {
+      if let option = ColorOption(rawValue: argument1) {
         switch option {
         case .random:
           color = randomColor()
@@ -143,6 +151,12 @@ func main() {
     }
   } else if arguments.count == 4 {
     // three arguments are RBG values from 0-100
+    
+    let redValue = parseRGBValue(arguments[1])
+    let greenValue = parseRGBValue(arguments[2])
+    let blueValue = parseRGBValue(arguments[3])
+
+    color = NSColor(calibratedRed: redValue, green: greenValue, blue: blueValue, alpha: 1.0)
   } else {
     usage()
     exit(1)

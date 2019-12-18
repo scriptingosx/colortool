@@ -63,9 +63,9 @@ func colorFromString(hexString : String) -> NSColor? {
   let success = scanner.scanHexInt32(&colorCode)
   
   if success == true {
-    redByte = UInt8.init((colorCode >> 16))
-    greenByte = UInt8.init((colorCode >> 8))
-    blueByte = UInt8.init(colorCode) // masks off high bits
+    redByte = UInt8.init((colorCode >> 16) & 0xff)
+    greenByte = UInt8.init((colorCode >> 8) & 0xff)
+    blueByte = UInt8.init(colorCode & 0xff)
     
     result = NSColor(calibratedRed: CGFloat(redByte) / 0xff, green: CGFloat(greenByte) / 0xff, blue: CGFloat(blueByte) / 0xff, alpha: 1.0)
   }
@@ -118,17 +118,19 @@ func main() {
   
   var color: NSColor?
   
-  if arguments.count == 2 {
+  if arguments.count == 1 {
+    color = randomColor()
+  } else if arguments.count == 2 {
     // first argument should be either a hexcode (start with #) or one of our options
-    if arguments[0].starts(with: "#") {
-      if let hexColor = colorFromString(hexString: arguments[0]) {
+    if arguments[1].starts(with: "#") {
+      if let hexColor = colorFromString(hexString: arguments[1]) {
         color = hexColor
       } else {
-        print("cannot parse \(arguments[0])")
+        print("cannot parse \(arguments[1])")
         exit(1)
       }
     } else {
-      if let option = ColorOption(rawValue: arguments[0]) {
+      if let option = ColorOption(rawValue: arguments[1]) {
         switch option {
         case .random:
           color = randomColor()
@@ -150,5 +152,6 @@ func main() {
   
   let image = colorImage(color ?? NSColor.gray)
   write(image: image, toURL: fileurl)
-  
 }
+
+main()
